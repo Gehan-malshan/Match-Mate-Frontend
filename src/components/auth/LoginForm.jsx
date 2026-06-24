@@ -1,5 +1,6 @@
 import { useState } from "react";
-import FormField from "../ui/FormField";
+import { Link } from "react-router-dom";
+import FormField from "../UI/FormField";
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -65,9 +66,9 @@ export default function LoginForm() {
 
       <p className="text-center font-body-md text-body-md text-on-surface-variant pt-2">
         New to the circle?{" "}
-        <a href="#" className="text-primary font-semibold hover:underline underline-offset-4 ml-1 transition-all">
+        <Link to="/register" className="text-primary font-semibold hover:underline underline-offset-4 ml-1 transition-all">
           Sign Up
-        </a>
+        </Link>
       </p>
     </div>
   );
