@@ -1,5 +1,5 @@
-import LandingPage from "./pages/LandingPage";
+import RegistrationPage from "./Pages/RegistrationPage";
 
 export default function App() {
-  return <LandingPage />;
+  return <RegistrationPage />;
 }
