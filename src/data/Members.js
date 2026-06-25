@@ -153,3 +153,33 @@ export const members = [
     discoveryNote: "Here for the surprises",
   },
 ];
+
+// Match data keyed by event id. Each entry has a percent score,
+// a confirmation status, and avatar overrides matching the mockup
+// (confirmed-style matches are full color / glowing, others are
+// dimmed + grayscale, per the "98% Match" vs "84% Match" cards).
+export const matchesByEvent = {
+  "velvet-masquerade": [
+    {
+      id: "match_01",
+      memberAId: "cider-wit",
+      memberBId: "velvet-lyric",
+      score: 98,
+      status: "suggested",
+    },
+    {
+      id: "match_02",
+      memberAId: "satin-veil",
+      memberBId: "neon-shadow",
+      score: 84,
+      status: "suggested",
+    },
+  ],
+};
+
+export const getMemberById = (memberId) =>
+  members.find((member) => member.id === memberId);
+
+export const getMatchesForEvent = (eventId) => matchesByEvent[eventId] ?? [];
+
+export default members;
