@@ -3,7 +3,7 @@ import AppNavbar from "../components/layout/AppNavbar";
 import BottomNav from "../components/layout/BottomNav";
 import FilterChip from "../components/UI/FilterChip";
 import MemberCard from "../components/community/MemberCard";
-import { members } from "../data/members";
+import { members } from "../data/Members";
 
 
 const filters = ["All Members", "Mysterious", "Vibrant"];

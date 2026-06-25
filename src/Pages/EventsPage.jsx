@@ -3,17 +3,9 @@ import AppNavbar from "../components/layout/AppNavbar";
 import BottomNav from "../components/layout/BottomNav";
 import FilterChip from "../components/UI/FilterChip";
 import EventCard from "../components/event/EventCard";
+import {events} from "../data/Event"; // Assuming you have a data file for events
 
 const filters = ["All Events", "Masquerade", "Blind Dinner", "Secret Soiree"];
-
-const events = [
-  { title: "The Obsidian Gala", location: "Manhattan, NY", date: "Oct 24", time: "9:00 PM", badge: "Booking Open", badgeVariant: "primary", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAAgP5GVrL75kuzgsgD_eYESCi14pYZLgIRFvHapqocRNG-BDkI0jPAGbxTchcZNnq2GZWpILS9xZMmvioNajLWYHotZ0FadLYJXSzfDql1qdUanFsMWunAd_tpRlHVUZSkxJah2AdohojRv4QDugaT8oKbSYSky7M_6D_fliPtElYlJzwOmzAqsTLY3a_hBgudrUsESwZlbcvf6h6jehRBhJZggxfvLpi4GzTTUtiTO3vocXn88iKsPXHtQK4FEr9TmSaM2k-mtqs" },
-  { title: "Midnight Mezcal", location: "Brooklyn, NY", date: "Oct 26", time: "10:30 PM", badge: "Limited Seats", badgeVariant: "secondary", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCRCQ2BLHlcl43fE0ISpdjYXa0Hsdx6ljiqAUIQvowJ5IW3c7nKRMeZJnB-_B-ugbBUpVWuVT5omv9DpWXcqFvA2pSeKqm3o5pr1Kwb5lXoKUoQMSq_uw1g_e1Eq7WKXy8heyIlgfPrv3G6rrxVGZCcokLXw-rVW8hYJkEAygGOV-iHmPpaUf5f1CtENwKmStvZK-1R631UoPaPntj44nVfvRJXw-9bH0vw8AV9QlVUCxJOkyoycs8VfHbChg6-C8kbYt_ehQe-8oE" },
-  { title: "Crimson Masquerade", location: "Chelsea, NY", date: "Oct 31", time: "8:00 PM", badge: "Booking Open", badgeVariant: "primary", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCuNDHqfI54hZmQWd4AhXg-SyQtSVNXOTAYq76R6CkfZNdyEU1K9csnOpNa14IU2Pghw-XJgGfRb0-936K6dSU_Hgr9UF1RVsKG30FZFE-i6Ng2r4p-61DxJ-tC98Utv1e9tBwmlvE7-_4eo-HnYDg7K-XtkiNegwjZL1hYwlMbFm8u73eZ2l5eij47Ldn0wiA1X7Lg_KOeOAqngJaRkHbcoIn56XIAaSMq4Q3YzNUA4NQyNMQa0I4unpkZn5pehawXObNo3YwI1EU" },
-  { title: "Velvet Noir Dinner", location: "Tribeca, NY", date: "Nov 03", time: "7:30 PM", badge: "Waitlist Only", badgeVariant: "neutral", grayscale: true, ctaLabel: "Join Waitlist", ctaIcon: "lock_open", ctaVariant: "outline", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDW-l8ZNJmd-1gpdREbKSU1BNtTzl-3grjmk79VzmqPBgTZwk5EzWAm4FdmmZDzTzIQK-ZD8DWtpaayNf3yOzj2KN26EOsAj0HxgGTa0n2Db7Ys1mP29BSWBUXz4_uV1u3rqmoNVli-jFYD3CenbL2S4RtfS374DvM1GIwkIPKyCigwiLrMQvu7yl1EBtWGDzL3b64Q0UrG4Vz45jM0oSPNwbGZ872TGpxXTONDBkas3Rx56iZoRGsZuFzeRK4R0yRessZK-wM--J0" },
-  { title: "The Silent Solstice", location: "SOHO, NY", date: "Nov 12", time: "6:00 PM", badge: "Booking Open", badgeVariant: "primary", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCRNHYt94OyLIFXKYGn9MJBvdo1SAMdW2uwdP20f6aBJgQRdDLa5szeHSmcleRf_lGGT_Sq6w6F5yavrz1RmDDqcxvOnQyGc9_77kGC3ReaF5d4mKIb90n_U6AWJgj6lZPs0VZMEiCfU6ecQGEkLJuqbRP03dr4OCjoPDa3KtD4Sc_Z8U20wSo4bHQ6FQBsopcTEywpUs8_Aa8RQc2A6c1BNn38AVpJ-YmbtLx8J0Rzxu88d57qFcGH9WDdKgjHOqnLhbqSbwkTnaU" },
-  { title: "Secret Roof Soiree", location: "Central Park South", date: "Nov 18", time: "11:00 PM", badge: "Limited Seats", badgeVariant: "secondary", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAEpz3S92JIbDOaA-_1p1GXehbkT_-1-kzYruZWsiMAh87B0tqbc-cAf1cjZz7im31dm2MuuBdOsGy7O95mb1WjFPMJeCT3XbuDvYwm7ctx_wJdpXIqlGfCNS0SKOANVaK006ECGErHI8OjUpK0x3I-dA9BWMpgwY9zOiHhN7BY5wk5i0bDRmtLPOGiIC1bXUxbKzBgU1pXozgUZ6Qc8ntOrTX8dHHCJy2JwMzUMomnbdR57gczMeTdVjNDvnc-vQzZQi7ITQl4lAo" },
-];
 
 export default function EventsPage() {
   const [activeFilter, setActiveFilter] = useState("All Events");

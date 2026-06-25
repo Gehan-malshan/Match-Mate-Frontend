@@ -5,7 +5,8 @@ import LandingPage from "./Pages/LandingPage";
 import LoginPage from "./Pages/LoginPage";
 import ProfilePage from "./Pages/ProfilePage";
 import RegistrationPage from "./Pages/RegistrationPage";
-import MemberProfilePage from "./pages/MemberProfilePage";
+import MemberProfilePage from "./Pages/MemberProfilePage";
+import EventDetailsPage from "./Pages/EventDetailsPage";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
       <Route path="/community" element={<CommunityPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/community/:memberId" element={<MemberProfilePage />} />
+      <Route path="/events/:id" element={<EventDetailsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
