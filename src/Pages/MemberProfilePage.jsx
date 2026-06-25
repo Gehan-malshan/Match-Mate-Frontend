@@ -3,7 +3,7 @@ import Navbar from "../components/layout/Navbar";
 import BottomNav from "../components/layout/BottomNav";
 import InfoCard from "../components/member/InfoCard";
 import DiscoveryIntentCard from "../components/member/DiscoveryIntentCard";
-import { members } from "../data/members";
+import { members } from "../data/Members";
 
 export default function MemberProfilePage() {
   const { memberId } = useParams();

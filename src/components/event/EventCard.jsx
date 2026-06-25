@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 const badgeClasses = {
   primary: "bg-primary/20 border border-primary/30 text-primary",
   secondary: "bg-secondary-container/40 border border-secondary-container/60 text-on-secondary-container",
@@ -5,11 +7,16 @@ const badgeClasses = {
 };
 
 export default function EventCard({
-  image, badge, badgeVariant = "primary", location, title, date, time,
-  ctaLabel = "Step Inside", ctaIcon = "arrow_forward", ctaVariant = "primary", grayscale = false,
-}) {
+      id, image, badge, badgeVariant = "primary", location, title, date, time,
+      ctaLabel = "Step Inside", ctaIcon = "arrow_forward", ctaVariant = "primary", grayscale = false,
+    }) {
+      
+  const navigate = useNavigate();
+
   return (
-    <div className={`group relative overflow-hidden rounded-2xl glass-panel transition-all duration-500 hover:border-primary/30 flex flex-col h-[520px] ${grayscale ? "opacity-90 grayscale hover:grayscale-0" : ""}`}>
+    <div
+      onClick={() => navigate(`/events/${id}`)}
+      className={`group relative overflow-hidden rounded-2xl glass-panel transition-all duration-500 hover:border-primary/30 flex flex-col h-[520px] cursor-pointer ${grayscale ? "opacity-90 grayscale hover:grayscale-0" : ""}`}>
       <div className="absolute inset-0 z-0">
         <div
           className={`w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105 ${grayscale ? "opacity-60" : "opacity-80"}`}
