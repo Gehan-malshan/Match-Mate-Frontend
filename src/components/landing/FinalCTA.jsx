@@ -20,8 +20,8 @@ export default function FinalCTA() {
           Join thousands of members who chose mystery over algorithms. Your next great love story could begin at our next event.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button variant="primary" icon="arrow_forward">Explore Event</Button>
-          <Button variant="outline">Create Profile</Button>
+          <Button href="/events" variant="primary" icon="arrow_forward">Explore Event</Button>
+          <Button href="/register" variant="outline">Create Profile</Button>
         </div>
       </div>
     </section>

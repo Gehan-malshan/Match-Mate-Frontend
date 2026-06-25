@@ -25,8 +25,8 @@ export default function Hero() {
             No algorithms to swipe, no faces to judge — just the thrill of genuine discovery.
           </p>
           <div className="flex flex-wrap gap-4 mt-4">
-            <Button variant="primary" icon="arrow_forward">Explore Event</Button>
-            <Button variant="outlinePrimary">Create Profile</Button>
+            <Button href="/events" variant="primary" icon="arrow_forward">Explore Event</Button>
+            <Button href="/register" variant="outlinePrimary">Create Profile</Button>
           </div>
         </div>
 
