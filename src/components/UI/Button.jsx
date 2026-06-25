@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Button({ children, variant = "primary", icon, href = "#", className = "" }) {
   const base =
     "font-label-sm text-label-sm px-8 py-4 rounded-full inline-flex items-center gap-2 transition-all";
@@ -10,13 +12,13 @@ export default function Button({ children, variant = "primary", icon, href = "#"
   };
 
   return (
-    <a href={href} className={`${base} ${variants[variant]} ${className}`}>
+    <Link to={href} className={`${base} ${variants[variant]} ${className}`}>
       {children}
       {icon && (
         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
           {icon}
         </span>
       )}
-    </a>
+    </Link>
   );
 }
