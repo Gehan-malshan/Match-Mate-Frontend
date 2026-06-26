@@ -1,0 +1,806 @@
+/* src/styles/checkout.css
+   Styles for the simulated payment + booking confirmation flow.
+   Import once, e.g. in main.jsx: import "./styles/checkout.css";
+
+   Reuses the same design tokens as styles/admin.css (--mm-* variables).
+   If admin.css is already imported globally, the :root block below is
+   redundant but harmless — duplicate custom property declarations are
+   not an error in CSS, the latter one simply wins.
+*/
+
+:root {
+  --mm-background: #131313;
+  --mm-surface: #131313;
+  --mm-surface-container-high: #2a2a2a;
+  --mm-primary: #fface9;
+  --mm-primary-container: #f837e0;
+  --mm-on-primary: #5d0054;
+  --mm-on-primary-container: #520049;
+  --mm-on-surface: #e5e2e1;
+  --mm-on-surface-variant: #dcbed0;
+  --mm-on-background: #e5e2e1;
+  --mm-error: #ffb4ab;
+  --mm-error-container: #93000a;
+  --mm-on-error: #690005;
+  --mm-on-error-container: #ffdad6;
+  --mm-outline: #a4899a;
+  --mm-outline-variant: #56404f;
+  --mm-font-display: "Libre Caslon Text", serif;
+  --mm-font-body: "Hanken Grotesk", sans-serif;
+  --mm-margin-mobile: 20px;
+  --mm-margin-desktop: 64px;
+  --mm-container-max: 1200px;
+}
+
+.glass-panel {
+  background: rgba(19, 19, 19, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 172, 233, 0.1);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #fface9, #f837e0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.chemistry-glow {
+  box-shadow: 0 0 40px -10px rgba(248, 55, 224, 0.25);
+}
+
+.animate-reveal {
+  animation: mm-reveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes mm-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Shared full-screen checkout shell ---------- */
+
+.payment-processing-page,
+.payment-failed-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--mm-background);
+  color: var(--mm-on-background);
+  font-family: var(--mm-font-body);
+  overflow: hidden;
+  padding: var(--mm-margin-mobile);
+}
+
+.payment-processing-page__backdrop,
+.payment-failed-page__backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 40%,
+    rgba(248, 55, 224, 0.08),
+    transparent 60%
+  );
+  z-index: 0;
+}
+
+.payment-processing-page__content,
+.payment-failed-page__content {
+  position: relative;
+  z-index: 1;
+  max-width: 28rem;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ---------- Payment Processing ---------- */
+
+.payment-processing-page__loader {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+}
+
+.payment-processing-page__loader-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 3px solid rgba(255, 172, 233, 0.15);
+  border-top-color: var(--mm-primary);
+  animation: mm-spin 1s linear infinite;
+  box-shadow: 0 0 30px rgba(248, 55, 224, 0.3);
+}
+
+@keyframes mm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.payment-processing-page__loader-icon {
+  color: var(--mm-primary);
+  font-size: 32px;
+}
+
+.payment-processing-page__title {
+  font-family: var(--mm-font-display);
+  font-size: 32px;
+  margin: 0 0 0.75rem;
+}
+
+.payment-processing-page__subtitle {
+  font-size: 16px;
+  color: var(--mm-on-surface-variant);
+  margin: 0;
+}
+
+.payment-processing-page__ellipsis span {
+  animation: mm-ellipsis 1.4s infinite;
+  display: inline-block;
+}
+
+.payment-processing-page__ellipsis span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.payment-processing-page__ellipsis span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes mm-ellipsis {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.payment-processing-page__event-name {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--mm-primary);
+  opacity: 0.8;
+  margin: 0.5rem 0 0;
+}
+
+.payment-processing-page__dev-tools {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed rgba(164, 137, 154, 0.25);
+  width: 100%;
+}
+
+.payment-processing-page__dev-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--mm-on-surface-variant);
+  opacity: 0.5;
+  margin-bottom: 0.75rem;
+}
+
+.payment-processing-page__dev-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.payment-processing-page__dev-btn {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.payment-processing-page__dev-btn:hover {
+  opacity: 1;
+}
+
+.payment-processing-page__dev-btn--success {
+  border-color: rgba(255, 172, 233, 0.3);
+  color: var(--mm-primary);
+}
+
+.payment-processing-page__dev-btn--failure {
+  border-color: rgba(255, 180, 171, 0.3);
+  color: var(--mm-error);
+}
+
+/* ---------- Payment Failed ---------- */
+
+.payment-failed-page__icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 9999px;
+  background-color: rgba(147, 0, 10, 0.2);
+  border: 1px solid rgba(255, 180, 171, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.payment-failed-page__icon {
+  color: var(--mm-error);
+  font-size: 36px;
+}
+
+.payment-failed-page__title {
+  font-family: var(--mm-font-display);
+  font-size: 32px;
+  margin: 0 0 1.5rem;
+}
+
+.payment-failed-page__banner {
+  width: 100%;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  text-align: left;
+  background-color: rgba(147, 0, 10, 0.12);
+  border: 1px solid rgba(255, 180, 171, 0.25);
+  color: var(--mm-error);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.payment-failed-page__banner p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mm-on-surface-variant);
+}
+
+.payment-failed-page__banner .material-symbols-outlined {
+  flex-shrink: 0;
+}
+
+.payment-failed-page__attempts {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mm-on-surface-variant);
+  opacity: 0.7;
+  margin: 0 0 1.5rem;
+}
+
+.payment-failed-page__retry-btn {
+  width: 100%;
+  padding: 1rem 2rem;
+  border-radius: 9999px;
+  border: none;
+  background-color: var(--mm-primary-container);
+  color: var(--mm-on-primary-container);
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(248, 55, 224, 0.3);
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.payment-failed-page__retry-btn:hover {
+  opacity: 0.9;
+}
+
+.payment-failed-page__retry-btn:active {
+  transform: scale(0.97);
+}
+
+.payment-failed-page__limit-notice {
+  width: 100%;
+  background-color: rgba(53, 53, 52, 0.4);
+  border: 1px solid rgba(164, 137, 154, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.payment-failed-page__limit-notice p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mm-on-surface-variant);
+  margin: 0 0 1rem;
+}
+
+.payment-failed-page__escape-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--mm-primary);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.payment-failed-page__escape-link:hover {
+  text-decoration: underline;
+}
+
+.payment-failed-page__cancel-link {
+  display: block;
+  margin-top: 1.25rem;
+  font-size: 12px;
+  color: var(--mm-on-surface-variant);
+  opacity: 0.6;
+  text-decoration: none;
+}
+
+.payment-failed-page__cancel-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* ---------- Booking Confirmed ---------- */
+
+.booking-confirmed-page {
+  background-color: var(--mm-background);
+  color: var(--mm-on-background);
+  font-family: var(--mm-font-body);
+  min-height: 100vh;
+}
+
+.booking-confirmed-page__nav {
+  background-color: rgba(19, 19, 19, 0.8);
+  backdrop-filter: blur(8px);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 50;
+}
+
+.booking-confirmed-page__brand {
+  display: block;
+  max-width: var(--mm-container-max);
+  margin: 0 auto;
+  padding: 1rem var(--mm-margin-mobile);
+  font-family: var(--mm-font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--mm-primary);
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .booking-confirmed-page__brand {
+    padding: 1rem var(--mm-margin-desktop);
+  }
+}
+
+.booking-confirmed-page__main {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8rem var(--mm-margin-mobile) 5rem;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .booking-confirmed-page__main {
+    padding: 8rem var(--mm-margin-desktop) 5rem;
+  }
+}
+
+.booking-confirmed-page__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.booking-confirmed-page__atmosphere-bg {
+  background-size: cover;
+  background-position: center;
+  width: 100%;
+  height: 100%;
+  opacity: 0.2;
+  filter: blur(4px);
+}
+
+.booking-confirmed-page__atmosphere-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--mm-background),
+    rgba(19, 19, 19, 0.9),
+    var(--mm-background)
+  );
+}
+
+.booking-confirmed-page__content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 48rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.booking-confirmed-page__success-icon {
+  margin-bottom: 2.5rem;
+  width: 96px;
+  height: 96px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 172, 233, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.booking-confirmed-page__success-icon .material-symbols-outlined {
+  font-size: 48px;
+  color: var(--mm-primary);
+  font-variation-settings: "FILL" 1;
+}
+
+.booking-confirmed-page__heading {
+  font-family: var(--mm-font-display);
+  font-size: 32px;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .booking-confirmed-page__heading {
+    font-size: 64px;
+  }
+}
+
+.booking-confirmed-page__heading-accent {
+  font-style: italic;
+}
+
+.booking-confirmed-page__subheading {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--mm-on-surface-variant);
+  font-style: italic;
+  max-width: 28rem;
+  margin: 0 auto 3rem;
+}
+
+.booking-confirmed-page__ticket {
+  width: 100%;
+  border-radius: 1rem;
+  padding: 2rem;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+@media (min-width: 768px) {
+  .booking-confirmed-page__ticket {
+    padding: 3rem;
+  }
+}
+
+.booking-confirmed-page__ticket-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12rem;
+  height: 12rem;
+  background-color: rgba(255, 172, 233, 0.05);
+  filter: blur(80px);
+  border-radius: 9999px;
+  margin-right: -6rem;
+  margin-top: -6rem;
+}
+
+.booking-confirmed-page__ticket-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .booking-confirmed-page__ticket-body {
+    flex-direction: row;
+  }
+}
+
+.booking-confirmed-page__ticket-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.booking-confirmed-page__ticket-eyebrow {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--mm-primary);
+  margin-bottom: 1rem;
+}
+
+.booking-confirmed-page__ticket-title {
+  font-family: var(--mm-font-display);
+  font-size: 28px;
+  margin: 0;
+}
+
+.booking-confirmed-page__ticket-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.booking-confirmed-page__ticket-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--mm-on-surface-variant);
+  font-size: 18px;
+}
+
+.booking-confirmed-page__ticket-meta-icon {
+  background-color: rgba(255, 172, 233, 0.1);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.booking-confirmed-page__ticket-meta-icon .material-symbols-outlined {
+  color: var(--mm-primary);
+  font-variation-settings: "FILL" 1;
+}
+
+.booking-confirmed-page__ticket-id-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .booking-confirmed-page__ticket-id-block {
+    align-items: flex-end;
+    width: auto;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0;
+    padding-left: 3rem;
+  }
+}
+
+.booking-confirmed-page__ticket-id-label {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(220, 190, 208, 0.6);
+  margin-bottom: 0.75rem;
+}
+
+.booking-confirmed-page__ticket-id {
+  font-family: monospace;
+  font-size: 20px;
+  color: var(--mm-primary);
+  letter-spacing: 0.15em;
+  background-color: rgba(42, 42, 42, 0.5);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 172, 233, 0.2);
+}
+
+.booking-confirmed-page__qr-wrap {
+  margin-top: 2.5rem;
+  position: relative;
+}
+
+.booking-confirmed-page__qr-glow {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 172, 233, 0.2);
+  filter: blur(24px);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.booking-confirmed-page__qr-wrap:hover .booking-confirmed-page__qr-glow {
+  opacity: 1;
+}
+
+.booking-confirmed-page__qr {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  opacity: 0.8;
+  filter: grayscale(1);
+  cursor: pointer;
+  transition: filter 0.7s ease;
+}
+
+.booking-confirmed-page__qr-wrap:hover .booking-confirmed-page__qr {
+  filter: grayscale(0);
+}
+
+.booking-confirmed-page__ticket-footer {
+  margin-top: 3rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .booking-confirmed-page__ticket-footer {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.booking-confirmed-page__ticket-footer-item {
+  display: flex;
+  gap: 1rem;
+}
+
+.booking-confirmed-page__ticket-footer-item .material-symbols-outlined {
+  color: rgba(255, 172, 233, 0.6);
+  flex-shrink: 0;
+}
+
+.booking-confirmed-page__ticket-footer-item p {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  line-height: 1.6;
+  color: var(--mm-on-surface-variant);
+  margin: 0;
+}
+
+.booking-confirmed-page__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 32rem;
+}
+
+@media (min-width: 640px) {
+  .booking-confirmed-page__actions {
+    flex-direction: row;
+  }
+}
+
+.booking-confirmed-page__action-btn {
+  flex: 1;
+  padding: 1.25rem 2rem;
+  border-radius: 9999px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+
+.booking-confirmed-page__action-btn:active {
+  transform: scale(0.95);
+}
+
+.booking-confirmed-page__action-btn--primary {
+  background-color: var(--mm-primary-container);
+  color: var(--mm-on-primary-container);
+  box-shadow: 0 0 20px rgba(248, 55, 224, 0.3);
+}
+
+.booking-confirmed-page__action-btn--primary:hover {
+  opacity: 0.9;
+}
+
+.booking-confirmed-page__action-btn--primary:hover .material-symbols-outlined {
+  transform: translateX(4px);
+}
+
+.booking-confirmed-page__action-btn--primary .material-symbols-outlined {
+  transition: transform 0.15s ease;
+  font-variation-settings: "FILL" 1;
+}
+
+.booking-confirmed-page__action-btn--secondary {
+  background: transparent;
+  border: 1px solid var(--mm-primary);
+  color: var(--mm-primary);
+}
+
+.booking-confirmed-page__action-btn--secondary:hover {
+  background-color: rgba(255, 172, 233, 0.1);
+}
+
+.booking-confirmed-page__footer {
+  margin-top: 6rem;
+  opacity: 0.6;
+  text-align: center;
+  width: 100%;
+  max-width: var(--mm-container-max);
+}
+
+.booking-confirmed-page__footer-brand {
+  font-family: var(--mm-font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--mm-primary);
+  margin-bottom: 1.5rem;
+}
+
+.booking-confirmed-page__footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.booking-confirmed-page__footer-links a {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--mm-on-surface-variant);
+  text-decoration: none;
+}
+
+.booking-confirmed-page__footer-links a:hover {
+  color: var(--mm-primary);
+}
+
+.booking-confirmed-page__footer-copyright {
+  font-size: 12px;
+  color: rgba(220, 190, 208, 0.5);
+  margin: 0;
+}
