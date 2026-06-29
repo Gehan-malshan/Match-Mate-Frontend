@@ -7,7 +7,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="py-32 px-margin-mobile md:px-margin-desktop bg-background">
+    <section id="how-it-works" className="py-32 px-margin-mobile md:px-margin-desktop bg-background">
       <div className="max-w-container-max mx-auto">
         <div className="text-center mb-16">
           <span className="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-4 block">The Experience</span>

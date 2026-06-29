@@ -21,7 +21,7 @@ const statusColors = {
 };
 
 const EventDetailPage = () => {
-  const { id } = useParams();
+  const { eventId: id } = useParams();
   const navigate = useNavigate();
   const heroBgRef = useRef(null);
   const { isAuthenticated, user } = useAuth();
