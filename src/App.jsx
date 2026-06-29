@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AppStateProvider } from "./context/AppStateContext";
 
 // Public / Client Pages
 import CommunityPage from "./Pages/CommunityPage";
@@ -10,7 +9,9 @@ import ProfilePage from "./Pages/ProfilePage";
 import RegistrationPage from "./Pages/RegistrationPage";
 import MemberProfilePage from "./Pages/MemberProfilePage";
 import EventDetailsPage from "./Pages/EventDetailsPage";
+import BookingsPage from "./Pages/BookingsPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AdminRoute from "./components/auth/AdminRoute";
 
 // Checkout Journey Pages
 import PaymentProcessingPage from "./Pages/checkout/PaymentProcessingPage";
@@ -28,7 +29,7 @@ import "./styles/checkout.css";
 
 export default function App() {
   return (
-    <AppStateProvider>
+    <>
       {/* Note: The duplicate <Router> wrapper has been removed here 
         since your app is already wrapped in one inside src/main.jsx.
       */}
@@ -44,6 +45,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookings"
+          element={
+            <ProtectedRoute>
+              <BookingsPage />
             </ProtectedRoute>
           }
         />
@@ -66,8 +75,15 @@ export default function App() {
           element={<BookingConfirmedPage />} 
         />
         
-        {/* Admin route tree nested under AdminLayout */}
-        <Route path="/admin" element={<AdminLayout />}>
+        {/* Admin route tree nested under AdminLayout (ADMIN role required) */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
           <Route index element={<Navigate to="/admin/events" replace />} />
           <Route path="events" element={<AdminEventListPage />} />
           <Route path="events/create" element={<AdminManageEventPage />} />
@@ -82,7 +98,7 @@ export default function App() {
         {/* Global Fallback Route Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AppStateProvider>
+    </>
   );
 }
 

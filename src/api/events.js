@@ -43,3 +43,23 @@ export const getEventsNearby = (latitude, longitude, radius = 50, params = {}) =
 // POST /events/create -> ApiResponse<EventResponseDTO>
 export const createEvent = (payload) =>
   apiClient.post("/events/create", payload).then(unwrap);
+
+// PUT /events/{eventId} -> ApiResponse<EventResponseDTO> (creator only)
+export const updateEvent = (eventId, payload) =>
+  apiClient.put(`/events/${eventId}`, payload).then(unwrap);
+
+// DELETE /events/{eventId} -> ApiResponse (creator only)
+export const deleteEvent = (eventId) =>
+  apiClient.delete(`/events/${eventId}`).then((res) => res.data);
+
+// PUT /events/{eventId}/limits?maleLimit=&femaleLimit= -> EventResponseDTO (ROLE_ADMIN)
+// Note: the backend reads maleLimit/femaleLimit as query params and returns the
+// raw EventResponseDTO (no ApiResponse wrapper on this endpoint).
+export const updateEventLimits = (eventId, { maleLimit, femaleLimit }) =>
+  apiClient
+    .put(`/events/${eventId}/limits`, null, { params: { maleLimit, femaleLimit } })
+    .then((res) => res.data);
+
+// PUT /events/{eventId}/status/{status} -> ApiResponse<EventResponseDTO> (creator only)
+export const updateEventStatus = (eventId, status) =>
+  apiClient.put(`/events/${eventId}/status/${status}`).then(unwrap);

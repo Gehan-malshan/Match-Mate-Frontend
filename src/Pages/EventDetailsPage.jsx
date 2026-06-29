@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { getEventById } from "../api/events";
 import { extractErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-import { startBookingAndPayment } from "../utils/paymentFlow";
 import {
   FALLBACK_IMAGE,
   deriveStatus,
@@ -24,14 +23,11 @@ const EventDetailPage = () => {
   const { eventId: id } = useParams();
   const navigate = useNavigate();
   const heroBgRef = useRef(null);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [booking, setBooking] = useState(false);
-  const [bookingMessage, setBookingMessage] = useState("");
-  const [bookingError, setBookingError] = useState("");
 
   // Parallax scroll effect on hero image
   useEffect(() => {
@@ -68,39 +64,14 @@ const EventDetailPage = () => {
     };
   }, [id]);
 
-  const handleBooking = async () => {
-    setBookingError("");
-    setBookingMessage("");
-
+  const handleBooking = () => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: { pathname: `/events/${id}` } } });
       return;
     }
-
-    setBooking(true);
-    try {
-      const result = await startBookingAndPayment({
-        event,
-        user,
-        onStatus: (msg) => setBookingMessage(msg),
-      });
-      setBookingMessage(
-        result.confirmed
-          ? "Booking confirmed! Your seat is secured."
-          : "Payment received. Your booking will be confirmed shortly."
-      );
-      // Refresh seat availability after a successful booking.
-      try {
-        const refreshed = await getEventById(id);
-        setEvent(refreshed);
-      } catch {
-        /* non-critical */
-      }
-    } catch (err) {
-      setBookingError(extractErrorMessage(err, "Booking could not be completed."));
-    } finally {
-      setBooking(false);
-    }
+    // Hand the loaded event to the dedicated checkout journey so it can run
+    // the real booking + PayHere flow without re-fetching.
+    navigate(`/events/${id}/payment-processing`, { state: { event } });
   };
 
   if (loading) {
@@ -300,26 +271,13 @@ const EventDetailPage = () => {
                 </div>
               </div>
 
-              {bookingMessage && (
-                <p className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 font-body-md text-sm text-primary">
-                  {bookingMessage}
-                </p>
-              )}
-              {bookingError && (
-                <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 font-body-md text-sm text-red-300">
-                  {bookingError}
-                </p>
-              )}
-
               <div className="space-y-4 pt-4">
                 <button
                   onClick={handleBooking}
-                  disabled={status.type === "closed" || booking}
+                  disabled={status.type === "closed"}
                   className="w-full bg-primary-container text-on-primary-container py-4 rounded-full font-bold font-label-sm text-label-sm uppercase tracking-wider flex justify-center items-center gap-3 hover:opacity-90 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(248,55,224,0.3)] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {booking
-                    ? "Processing..."
-                    : status.type === "waitlist"
+                  {status.type === "waitlist"
                     ? "Join the Waitlist"
                     : status.type === "closed"
                     ? "Event Closed"

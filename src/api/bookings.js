@@ -12,6 +12,10 @@ export const getBooking = (bookingId) =>
 export const getMyBookings = () =>
   apiClient.get("/bookings/my").then((res) => res.data);
 
+// GET /bookings/event/{eventId} -> BookingResponse[] (attendees for an event)
+export const getBookingsByEvent = (eventId) =>
+  apiClient.get(`/bookings/event/${eventId}`).then((res) => res.data);
+
 // GET /bookings/event/{eventId}/availability -> EventResponseDTO
 export const getEventAvailability = (eventId) =>
   apiClient.get(`/bookings/event/${eventId}/availability`).then((res) => res.data);

@@ -1,15 +1,25 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const navItems = [
+const baseNavItems = [
   { label: "Events", path: "/events" },
   { label: "Community", path: "/community" },
-  { label: "Profile", path: "/profile" },
 ];
 
 export default function AppNavbar() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
+
+  const navItems = [
+    ...baseNavItems,
+    ...(isAuthenticated
+      ? [
+          { label: "My Bookings", path: "/bookings" },
+          { label: "Profile", path: "/profile" },
+        ]
+      : []),
+    ...(isAdmin ? [{ label: "Admin", path: "/admin" }] : []),
+  ];
 
   const handleLogout = () => {
     logout();

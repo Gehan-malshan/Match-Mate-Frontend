@@ -25,3 +25,5 @@ dist-ssr
 
 # Local environment files (use .env.example as the template)
 .env
+README.md
+MatchMate_API_Documentation.pdf

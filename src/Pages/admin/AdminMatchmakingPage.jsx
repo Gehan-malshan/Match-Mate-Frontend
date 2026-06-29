@@ -1,57 +1,89 @@
 // src/Pages/admin/AdminMatchmakingPage.jsx
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getEventById } from "../../data/Event";
-import { members, getMemberById, getMatchesForEvent } from "../../data/Members";
+import { getEventById } from "../../api/events";
+import { getBookingsByEvent } from "../../api/bookings";
 import AttendeeListItem from "../../components/admin/AttendeeListItem";
-import MatchCard from "../../components/admin/MatchCard";
 import GlassPanel from "../../components/admin/GlassPanel";
 import '../../styles/admin.css';
 
+// Backend bookings carry no avatar; derive a deterministic placeholder.
+const avatarFor = (name) =>
+  `https://ui-avatars.com/api/?background=2a2422&color=fface9&name=${encodeURIComponent(
+    name || "Guest"
+  )}`;
+
+// BookingResponse -> AttendeeListItem props.
+const mapBookingToAttendee = (booking) => ({
+  id: booking.id,
+  alias: booking.userFullName || `User #${booking.userId}`,
+  tag: booking.status,
+  traits: booking.bookingDate ? `Booked ${booking.bookingDate}` : "",
+  avatarUrl: avatarFor(booking.userFullName),
+});
+
 export default function AdminMatchmakingPage() {
   const { eventId } = useParams();
-  const event = getEventById(eventId);
 
+  const [event, setEvent] = useState(null);
+  const [attendees, setAttendees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [matches, setMatches] = useState(() => getMatchesForEvent(eventId));
+
+  // Matchmaking pairing has NO backend endpoint yet — kept local only.
+  // TODO: needs backend endpoint (e.g. POST /events/{id}/matchmake).
   const [isMatching, setIsMatching] = useState(false);
 
-  // Robust, crash-safe filtering logic
-  const filteredMembers = useMemo(() => {
-    if (!searchTerm.trim()) return members;
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [eventDto, bookings] = await Promise.all([
+          getEventById(eventId),
+          getBookingsByEvent(eventId),
+        ]);
+        if (!active) return;
+        setEvent(eventDto);
+        setAttendees((bookings ?? []).map(mapBookingToAttendee));
+      } catch {
+        if (active) setError("Could not load event attendees.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [eventId]);
+
+  const filteredAttendees = useMemo(() => {
+    if (!searchTerm.trim()) return attendees;
     const term = searchTerm.toLowerCase();
-    
-    return members.filter((member) => {
-      // Safely fall back to alternative keys if alias doesn't exist on this record
-      const safetyName = member?.alias || member?.name || member?.username || "";
-      return safetyName.toLowerCase().includes(term);
-    });
-  }, [searchTerm]);
+    return attendees.filter((a) => a.alias.toLowerCase().includes(term));
+  }, [searchTerm, attendees]);
 
   const handleInitiateMatching = () => {
+    // No backend matchmaking endpoint; this only acknowledges the action.
     setIsMatching(true);
-    // TODO: replace with real AI synthesis call.
-    setTimeout(() => {
-      setMatches(getMatchesForEvent(eventId));
-      setIsMatching(false);
-    }, 1200);
+    setTimeout(() => setIsMatching(false), 600);
   };
 
-  const handleConfirmMatch = (matchId) => {
-    setMatches((prev) =>
-      prev.map((m) => (m.id === matchId ? { ...m, status: "confirmed" } : m))
+  if (loading) {
+    return (
+      <div className="matchmaking-page" style={{ padding: "2rem", opacity: 0.7 }}>
+        Loading attendees…
+      </div>
     );
-  };
+  }
 
-  const handleAdjustPairing = (matchId) => {
-    // TODO: open pairing-adjustment UI.
-    console.log("Adjust pairing for", matchId);
-  };
-
-  if (!event) {
+  if (error || !event) {
     return (
       <div className="matchmaking-page__not-found">
-        <p>Event not found.</p>
+        <p>{error || "Event not found."}</p>
       </div>
     );
   }
@@ -59,20 +91,17 @@ export default function AdminMatchmakingPage() {
   return (
     <div className="matchmaking-page">
       <div className="matchmaking-page__header">
-        {/* Guarding the event title rendering against key differences */}
-        <h1 className="matchmaking-page__title">
-          {event.title || event.name || event.id}
-        </h1>
-        <p className="matchmaking-page__tagline">{event.tagline || ""}</p>
+        <h1 className="matchmaking-page__title">{event.eventName}</h1>
+        <p className="matchmaking-page__tagline">{event.location || ""}</p>
       </div>
 
       <div className="matchmaking-page__layout">
-        {/* Left: Attendee Pool */}
+        {/* Left: Attendee Pool (live from /bookings/event/{id}) */}
         <section className="matchmaking-page__pool-col">
           <div className="matchmaking-page__pool-header">
             <h2 className="matchmaking-page__pool-title">Attendee Pool</h2>
             <span className="matchmaking-page__pool-count">
-              {event.registeredCount || 0} Registered
+              {attendees.length} Registered
             </span>
           </div>
 
@@ -81,7 +110,7 @@ export default function AdminMatchmakingPage() {
               <span className="material-symbols-outlined">search</span>
               <input
                 type="text"
-                placeholder="Search aliases..."
+                placeholder="Search attendees..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value || "")}
               />
@@ -92,32 +121,42 @@ export default function AdminMatchmakingPage() {
           </div>
 
           <div className="matchmaking-page__attendee-list">
-            {filteredMembers.map((member) => (
-              <AttendeeListItem key={member.id} member={member} />
+            {filteredAttendees.map((attendee) => (
+              <AttendeeListItem key={attendee.id} member={attendee} />
             ))}
-            {filteredMembers.length === 0 && (
+            {filteredAttendees.length === 0 && (
               <p className="matchmaking-page__no-matches" style={{ padding: "1rem", opacity: 0.5 }}>
-                No active attendees match your search.
+                {attendees.length === 0
+                  ? "No bookings for this event yet."
+                  : "No attendees match your search."}
               </p>
             )}
           </div>
         </section>
 
-        {/* Right: Alchemical Forge */}
+        {/* Right: Alchemical Forge — pairing engine has no backend yet */}
         <section className="matchmaking-page__forge-col">
+          <div className="admin-not-connected-notice">
+            <span className="material-symbols-outlined">info</span>
+            Matchmaking pairing isn&apos;t connected to the backend yet — there is
+            no matchmaking endpoint. The attendee pool above is live; pairings
+            shown here are not saved.
+          </div>
+
           <GlassPanel className="matchmaking-page__forge-panel">
             <h2 className="matchmaking-page__forge-title">The Alchemical Forge</h2>
             <p className="matchmaking-page__forge-copy">
-              Analyze compatibility vectors and weave the destiny of tonight&apos;s guests
-              with our proprietary AI Synthesis.
+              Analyze compatibility vectors and weave the destiny of tonight&apos;s guests.
+              (Pairing synthesis is a planned feature — not yet persisted.)
             </p>
             <button
               type="button"
               className="matchmaking-page__initiate-btn"
               onClick={handleInitiateMatching}
-              disabled={isMatching}
+              disabled={isMatching || attendees.length < 2}
+              title="Requires a backend matchmaking endpoint"
             >
-              <span>{isMatching ? "Synthesizing..." : "Initiate AI Matchmaking"}</span>
+              <span>{isMatching ? "Synthesizing…" : "Initiate AI Matchmaking"}</span>
               <span className="material-symbols-outlined">settings_suggest</span>
             </button>
           </GlassPanel>
@@ -125,27 +164,9 @@ export default function AdminMatchmakingPage() {
           <div className="matchmaking-page__matches">
             <h3 className="matchmaking-page__matches-title">Matched Connections</h3>
             <div className="matchmaking-page__matches-grid">
-              {matches.map((match) => {
-                const memberA = getMemberById(match.memberAId);
-                const memberB = getMemberById(match.memberBId);
-                if (!memberA || !memberB) return null;
-                return (
-                  <MatchCard
-                    key={match.id}
-                    memberA={memberA}
-                    memberB={memberB}
-                    score={match.score}
-                    status={match.status}
-                    onConfirm={() => handleConfirmMatch(match.id)}
-                    onAdjust={() => handleAdjustPairing(match.id)}
-                  />
-                );
-              })}
-              {matches.length === 0 && (
-                <p className="matchmaking-page__no-matches">
-                  No matches yet. Run AI Matchmaking to generate pairings.
-                </p>
-              )}
+              <p className="matchmaking-page__no-matches">
+                No pairings yet. Matchmaking requires a backend endpoint.
+              </p>
             </div>
           </div>
         </section>
