@@ -1,6 +1,7 @@
 // src/components/layout/AdminLayout.jsx
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
+import AppNavbar from "./AppNavbar";
 
 /**
  * Shell layout for the entire /admin/* route tree.
@@ -11,16 +12,10 @@ import AdminSidebar from "./AdminSidebar";
  */
 export default function AdminLayout() {
   return (
-    <div className="admin-layout">
+    <div className="admin-layout admin-layout--with-navbar">
+      <AppNavbar />
       <AdminSidebar />
       <div className="admin-layout__main">
-        <header className="admin-topbar">
-          <span className="material-symbols-outlined admin-topbar__menu-icon">menu</span>
-          <div className="admin-topbar__right">
-            <span className="material-symbols-outlined admin-topbar__icon-btn">notifications</span>
-            <span className="material-symbols-outlined admin-topbar__icon-btn">account_circle</span>
-          </div>
-        </header>
         <div className="admin-layout__content">
           <Outlet />
         </div>

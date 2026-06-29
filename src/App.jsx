@@ -92,7 +92,6 @@ export default function App() {
           
           {/* Fallback stub routes referenceable by sidebar links */}
           <Route path="matchmaking" element={<AdminPlaceholderPage title="Matchmaking Dashboard" />} />
-          <Route path="settings" element={<AdminPlaceholderPage title="System Settings" />} />
         </Route>
 
         {/* Global Fallback Route Redirect */}

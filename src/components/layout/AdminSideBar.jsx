@@ -1,11 +1,24 @@
 // src/components/layout/AdminSidebar.jsx
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
-// Strict nav set per spec: Event Manager, Matchmaking, Settings ONLY.
+function getInitials(name) {
+  if (!name) return "MM";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "MM";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatRole(role) {
+  if (!role) return "Organizer";
+  return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+}
+
+// Strict nav set per spec: Event Manager, Matchmaking ONLY.
 const NAV_ITEMS = [
   { key: "event-manager", label: "Event Manager", icon: "event_note", to: "/admin/events" },
   { key: "matchmaking", label: "Matchmaking", icon: "monitoring", to: "/admin/matchmaking" },
-  { key: "settings", label: "Settings", icon: "settings", to: "/admin/settings" },
 ];
 
 /**
@@ -28,15 +41,22 @@ export function getActiveNavKey(pathname) {
   if (pathname.startsWith("/admin/matchmaking")) {
     return "matchmaking";
   }
-  if (pathname.startsWith("/admin/settings")) {
-    return "settings";
-  }
   return null;
 }
 
 export default function AdminSidebar() {
   const { pathname } = useLocation();
   const activeKey = getActiveNavKey(pathname);
+  const { user } = useAuth();
+
+  const fullName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    user?.email ||
+    "Admin";
+  const initials = getInitials(
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || user?.email
+  );
+  const roleLabel = formatRole(user?.role);
 
   return (
     <aside className="admin-sidebar">
@@ -76,15 +96,12 @@ export default function AdminSidebar() {
         </Link>
 
         <div className="admin-sidebar__profile">
-          <div className="admin-sidebar__avatar">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAB5_K3QuedB547isUMfBsrtbk64sDWhaB7IZqWLmx6sOTzPga-KK-THgB3Y1ZvGjDR8Y1bdyR0ZVO8RveYie9LykBGQdBn_f3E_PGqT5BKF0Dw1Sok-EXjsT3hIe7EnZw-L4HjjG2Ey_yXxz_BQvBOSy2IjCkg9fbia1DEpWLu-1ZXOtjJ8IRUYQW_fl1syoNDBR-7nZSCesogtBJp3Y-8SL_HmGr0d1Owi5TdeDLaSkaF71_6G9t61dSPIsPirRassH8MopHhU7U"
-              alt="Admin profile"
-            />
+          <div className="admin-sidebar__avatar admin-sidebar__avatar--initials">
+            {initials}
           </div>
           <div className="admin-sidebar__profile-info">
-            <p className="admin-sidebar__profile-name">Julian Voss</p>
-            <p className="admin-sidebar__profile-role">Senior Curator</p>
+            <p className="admin-sidebar__profile-name">{fullName}</p>
+            <p className="admin-sidebar__profile-role">{roleLabel}</p>
           </div>
         </div>
       </div>

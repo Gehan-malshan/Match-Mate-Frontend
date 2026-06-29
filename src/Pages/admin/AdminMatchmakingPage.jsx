@@ -3,8 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getEventById } from "../../api/events";
 import { getBookingsByEvent } from "../../api/bookings";
+import { generateMatches, getMatches, updateMatchStatus } from "../../api/matches";
+import { extractErrorMessage } from "../../api/client";
 import AttendeeListItem from "../../components/admin/AttendeeListItem";
 import GlassPanel from "../../components/admin/GlassPanel";
+import MatchCard from "../../components/admin/MatchCard";
 import '../../styles/admin.css';
 
 // Backend bookings carry no avatar; derive a deterministic placeholder.
@@ -22,18 +25,24 @@ const mapBookingToAttendee = (booking) => ({
   avatarUrl: avatarFor(booking.userFullName),
 });
 
+// MatchResponse member -> MatchCard person props.
+const mapMember = (member) => ({
+  alias: member?.fullName || `User #${member?.userId ?? "?"}`,
+  avatarUrl: member?.profileImageUrl || avatarFor(member?.fullName),
+});
+
 export default function AdminMatchmakingPage() {
   const { eventId } = useParams();
 
   const [event, setEvent] = useState(null);
   const [attendees, setAttendees] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Matchmaking pairing has NO backend endpoint yet — kept local only.
-  // TODO: needs backend endpoint (e.g. POST /events/{id}/matchmake).
   const [isMatching, setIsMatching] = useState(false);
+  const [matchError, setMatchError] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -41,13 +50,15 @@ export default function AdminMatchmakingPage() {
       setLoading(true);
       setError(null);
       try {
-        const [eventDto, bookings] = await Promise.all([
+        const [eventDto, bookings, existingMatches] = await Promise.all([
           getEventById(eventId),
           getBookingsByEvent(eventId),
+          getMatches(eventId),
         ]);
         if (!active) return;
         setEvent(eventDto);
         setAttendees((bookings ?? []).map(mapBookingToAttendee));
+        setMatches(existingMatches ?? []);
       } catch {
         if (active) setError("Could not load event attendees.");
       } finally {
@@ -66,11 +77,39 @@ export default function AdminMatchmakingPage() {
     return attendees.filter((a) => a.alias.toLowerCase().includes(term));
   }, [searchTerm, attendees]);
 
-  const handleInitiateMatching = () => {
-    // No backend matchmaking endpoint; this only acknowledges the action.
+  // Rejected pairings are kept server-side for audit but hidden from the board.
+  const visibleMatches = useMemo(
+    () => matches.filter((m) => m.status !== "REJECTED"),
+    [matches]
+  );
+
+  const handleInitiateMatching = async () => {
     setIsMatching(true);
-    setTimeout(() => setIsMatching(false), 600);
+    setMatchError(null);
+    try {
+      const generated = await generateMatches(eventId);
+      setMatches(generated ?? []);
+    } catch (err) {
+      setMatchError(extractErrorMessage(err, "Matchmaking failed. Please try again."));
+    } finally {
+      setIsMatching(false);
+    }
   };
+
+  const applyStatus = async (matchId, status) => {
+    setMatchError(null);
+    try {
+      const updated = await updateMatchStatus(matchId, status);
+      setMatches((current) =>
+        current.map((m) => (m.matchId === matchId ? updated : m))
+      );
+    } catch (err) {
+      setMatchError(extractErrorMessage(err, "Could not update the pairing."));
+    }
+  };
+
+  const handleConfirm = (matchId) => applyStatus(matchId, "CONFIRMED");
+  const handleAdjust = (matchId) => applyStatus(matchId, "REJECTED");
 
   if (loading) {
     return (
@@ -134,39 +173,55 @@ export default function AdminMatchmakingPage() {
           </div>
         </section>
 
-        {/* Right: Alchemical Forge — pairing engine has no backend yet */}
+        {/* Right: Alchemical Forge — graph-based matchmaking engine */}
         <section className="matchmaking-page__forge-col">
-          <div className="admin-not-connected-notice">
-            <span className="material-symbols-outlined">info</span>
-            Matchmaking pairing isn&apos;t connected to the backend yet — there is
-            no matchmaking endpoint. The attendee pool above is live; pairings
-            shown here are not saved.
-          </div>
-
           <GlassPanel className="matchmaking-page__forge-panel">
             <h2 className="matchmaking-page__forge-title">The Alchemical Forge</h2>
             <p className="matchmaking-page__forge-copy">
               Analyze compatibility vectors and weave the destiny of tonight&apos;s guests.
-              (Pairing synthesis is a planned feature — not yet persisted.)
+              Pairings are computed with a graph-based maximum-weight matching engine
+              and saved as suggestions for you to confirm.
             </p>
             <button
               type="button"
               className="matchmaking-page__initiate-btn"
               onClick={handleInitiateMatching}
               disabled={isMatching || attendees.length < 2}
-              title="Requires a backend matchmaking endpoint"
+              title={
+                attendees.length < 2
+                  ? "Need at least two confirmed attendees"
+                  : "Generate compatibility-based pairings"
+              }
             >
               <span>{isMatching ? "Synthesizing…" : "Initiate AI Matchmaking"}</span>
               <span className="material-symbols-outlined">settings_suggest</span>
             </button>
+            {matchError && (
+              <p className="admin-form-field__error" style={{ marginTop: "0.75rem" }}>
+                {matchError}
+              </p>
+            )}
           </GlassPanel>
 
           <div className="matchmaking-page__matches">
             <h3 className="matchmaking-page__matches-title">Matched Connections</h3>
             <div className="matchmaking-page__matches-grid">
-              <p className="matchmaking-page__no-matches">
-                No pairings yet. Matchmaking requires a backend endpoint.
-              </p>
+              {visibleMatches.map((match) => (
+                <MatchCard
+                  key={match.matchId}
+                  memberA={mapMember(match.memberA)}
+                  memberB={mapMember(match.memberB)}
+                  score={match.score}
+                  status={(match.status || "").toLowerCase()}
+                  onConfirm={() => handleConfirm(match.matchId)}
+                  onAdjust={() => handleAdjust(match.matchId)}
+                />
+              ))}
+              {visibleMatches.length === 0 && (
+                <p className="matchmaking-page__no-matches">
+                  No pairings yet. Click “Initiate AI Matchmaking” to generate suggestions.
+                </p>
+              )}
             </div>
           </div>
         </section>
