@@ -1,7 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+
+const NAV_ITEMS = [
+  { label: "How it Works", to: "/#how-it-works", isAnchor: true },
+  { label: "Events", to: "/events", isAnchor: false },
+  { label: "About", to: "/about", isAnchor: false },
+];
 
 export default function Navbar() {
-  const links = ["How it Works", "Events", "About"];
+  const { pathname } = useLocation();
+
+  const handleNavClick = (e, item) => {
+    // If we are already on the landing page and click an anchor link, smooth scroll to it
+    if (item.isAnchor && pathname === "/") {
+      e.preventDefault();
+      const element = document.getElementById("how-it-works");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
 
   return (
     <nav className="bg-surface/80 backdrop-blur-md fixed top-0 w-full z-50 shadow-sm">
@@ -11,19 +28,25 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
-          {links.map((link, i) => (
-            <a
-              key={link}
-              href="#"
-              className={`font-label-sm text-label-sm transition-opacity hover:opacity-80 ${
-                i === 0
-                  ? "text-primary border-b-2 border-primary pb-1"
-                  : "text-on-surface-variant hover:text-primary transition-colors"
-              }`}
-            >
-              {link}
-            </a>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            // Determine active highlight based on current route path
+            const isActive = pathname === item.to || (item.isAnchor && pathname === "/");
+            
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                onClick={(e) => handleNavClick(e, item)}
+                className={`font-label-sm text-label-sm transition-all hover:opacity-80 ${
+                  isActive
+                    ? "text-primary border-b-2 border-primary pb-1"
+                    : "text-on-surface-variant hover:text-primary transition-colors"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-4">

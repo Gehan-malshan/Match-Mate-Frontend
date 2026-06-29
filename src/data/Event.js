@@ -1,4 +1,12 @@
 // src/data/events.js
+export const EVENT_TYPES = [
+  "Blind Dinner",
+  "Cocktail Mixer",
+  "Private Gala",
+  "Artistic Encounter",
+];
+
+export const EVENT_STATUSES = ["Draft", "Scheduled", "Live", "Sold Out"];
 
 export const events = [
   {
@@ -148,4 +156,32 @@ export const events = [
 //   { id: "secret-roof-soiree", title: "Secret Roof Soiree", location: "Central Park South", date: "Nov 18", time: "11:00 PM", badge: "Limited Seats", badgeVariant: "secondary", image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAEpz3S92JIbDOaA-_1p1GXehbkT_-1-kzYruZWsiMAh87B0tqbc-cAf1cjZz7im31dm2MuuBdOsGy7O95mb1WjFPMJeCT3XbuDvYwm7ctx_wJdpXIqlGfCNS0SKOANVaK006ECGErHI8OjUpK0x3I-dA9BWMpgwY9zOiHhN7BY5wk5i0bDRmtLPOGiIC1bXUxbKzBgU1pXozgUZ6Qc8ntOrTX8dHHCJy2JwMzUMomnbdR57gczMeTdVjNDvnc-vQzZQi7ITQl4lAo" },
 // ];
 
-export const getEventById = (id) => events.find((e) => e.id === id);
+export const getEventById = (eventId) =>
+  events.find((event) => event.id === eventId);
+
+export const createBlankEvent = () => ({
+  id: `EVT-DRAFT-${Date.now()}`,
+  name: "",
+  description: "",
+  tagline: "",
+  eventType: EVENT_TYPES[0],
+  status: "Draft",
+  startDateTime: "",
+  endDateTime: "",
+  address: "",
+  latitude: "",
+  longitude: "",
+  ticketPrice: "",
+  totalCapacity: "",
+  maleLimit: "",
+  femaleLimit: "",
+  coverImageUrl: "",
+  specialInstructions: "",
+  createdAt: "—",
+  lastUpdated: "—",
+  createdBy: "Julian Voss",
+  registeredCount: 0,
+  matchingStatus: "Not Started",
+});
+
+export default events;
