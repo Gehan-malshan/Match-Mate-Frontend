@@ -13,6 +13,7 @@ export default function PaymentFailedPage() {
   // (a fresh page load is a fresh session, which is the simplest correct
   // behavior for a client-only simulation).
   const retryCount = location.state?.retryCount ?? 0;
+  const reason = location.state?.reason;
   const hasRetriesLeft = retryCount < MAX_RETRY_ATTEMPTS;
 
   const handleTryAgain = () => {
@@ -39,8 +40,8 @@ export default function PaymentFailedPage() {
         <div className="payment-failed-page__banner" role="alert">
           <span className="material-symbols-outlined">warning</span>
           <p>
-            Your bank or card issuer declined this charge. No funds have been taken
-            from your account.
+            {reason ||
+              "Your bank or card issuer declined this charge. No funds have been taken from your account."}
           </p>
         </div>
 

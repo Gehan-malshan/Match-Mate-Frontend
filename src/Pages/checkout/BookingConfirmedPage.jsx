@@ -1,25 +1,31 @@
 // src/Pages/checkout/BookingConfirmedPage.jsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { useAppState } from "../../context/AppStateContext";
+import { getEventById } from "../../api/events";
+import { FALLBACK_IMAGE, formatEventDate, formatEventTime } from "../../utils/eventMapper";
 
 export default function BookingConfirmedPage() {
   const { eventId } = useParams();
   const location = useLocation();
-  const { getEventById, getMemberById } = useAppState();
 
-  const event = getEventById?.(eventId);
-  const ticketId = location.state?.ticketId;
-  const memberId = location.state?.memberId;
-  const member = memberId ? getMemberById?.(memberId) : null;
+  const bookingId = location.state?.bookingId ?? null;
+  const confirmed = location.state?.confirmed ?? true;
+  const [event, setEvent] = useState(location.state?.event ?? null);
 
   const ticketCardRef = useRef(null);
 
-  // Scoped tilt micro-interaction — ported from the raw HTML's
-  // document-level mousemove listener. Scoping the listener to the
-  // card's own bounding box (rather than attaching to `document`)
-  // avoids leaking a window-level listener across route changes and
-  // avoids doing math on every mousemove in the entire app.
+  // If we landed here without router state (e.g. refresh), fetch the event.
+  useEffect(() => {
+    if (event || !eventId) return;
+    let active = true;
+    getEventById(eventId)
+      .then((dto) => active && setEvent(dto))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [event, eventId]);
+
   useEffect(() => {
     const card = ticketCardRef.current;
     if (!card) return;
@@ -42,8 +48,12 @@ export default function BookingConfirmedPage() {
     return () => document.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  const eventName = event?.eventName ?? "Your Event";
+  const heroImage = event?.imageUrl || FALLBACK_IMAGE;
+  const ticketCode = bookingId ? `MM-${bookingId}` : "MM-PENDING";
+
   const handleAddToCalendar = () => {
-    window.alert(`${event?.title ?? "Your event"} has been added to your calendar.`);
+    window.alert(`${eventName} has been added to your calendar.`);
   };
 
   return (
@@ -58,12 +68,7 @@ export default function BookingConfirmedPage() {
         <div className="booking-confirmed-page__atmosphere">
           <div
             className="booking-confirmed-page__atmosphere-bg"
-            style={{
-              backgroundImage: `url('${
-                event?.heroImage ??
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuBdTqWjCnxrlR_e84PB0UCVPDRAz3ANThHKPs2FBrimevGllmy13lNZpv7W4mFs2nK07XZk8GEhSBbpj2AbhBZULasVc3Vu4HWtQcSphyM2FOb1YGwEfUxfkrBgiYMNfPdk5Zbc3tgpEs8DMxq8ah3Ix-GWI9s02MlrvT4G3wJnCSJhoFEP5RLoMir8DjEvRaZTg2uiUkVlWcEvuD4VzfFz5NrwzjCnywlQoM2101dUos0mGOVCj-Oqqz8jXLT5zgMRM6p_EvojF50"
-              }')`,
-            }}
+            style={{ backgroundImage: `url('${heroImage}')` }}
           />
           <div className="booking-confirmed-page__atmosphere-gradient" />
         </div>
@@ -77,7 +82,9 @@ export default function BookingConfirmedPage() {
             The <span className="text-gradient booking-confirmed-page__heading-accent">Veil</span> Awaits
           </h1>
           <p className="booking-confirmed-page__subheading">
-            Your presence is requested at the intersection of mystery and connection.
+            {confirmed
+              ? "Your presence is requested at the intersection of mystery and connection."
+              : "Payment received — your booking will be confirmed shortly."}
           </p>
 
           {/* Ticket card */}
@@ -88,11 +95,9 @@ export default function BookingConfirmedPage() {
               <div className="booking-confirmed-page__ticket-details">
                 <div>
                   <span className="booking-confirmed-page__ticket-eyebrow">
-                    Confirmed Experience
+                    {confirmed ? "Confirmed Experience" : "Pending Confirmation"}
                   </span>
-                  <h2 className="booking-confirmed-page__ticket-title">
-                    {event?.title ?? "Your Event"}
-                  </h2>
+                  <h2 className="booking-confirmed-page__ticket-title">{eventName}</h2>
                 </div>
 
                 <div className="booking-confirmed-page__ticket-meta">
@@ -100,13 +105,21 @@ export default function BookingConfirmedPage() {
                     <div className="booking-confirmed-page__ticket-meta-icon">
                       <span className="material-symbols-outlined">calendar_today</span>
                     </div>
-                    <span>{event?.date ?? "Date to be confirmed"}</span>
+                    <span>
+                      {event?.eventDate
+                        ? formatEventDate(event.eventDate)
+                        : "Date to be confirmed"}
+                    </span>
                   </div>
                   <div className="booking-confirmed-page__ticket-meta-row">
                     <div className="booking-confirmed-page__ticket-meta-icon">
                       <span className="material-symbols-outlined">schedule</span>
                     </div>
-                    <span>{event?.time ?? "Time to be confirmed"}</span>
+                    <span>
+                      {event?.eventDate
+                        ? formatEventTime(event.eventDate)
+                        : "Time to be confirmed"}
+                    </span>
                   </div>
                   <div className="booking-confirmed-page__ticket-meta-row">
                     <div className="booking-confirmed-page__ticket-meta-icon">
@@ -119,18 +132,18 @@ export default function BookingConfirmedPage() {
 
               <div className="booking-confirmed-page__ticket-id-block">
                 <span className="booking-confirmed-page__ticket-id-label">
-                  Secret Ticket ID
+                  Booking Reference
                 </span>
-                <code className="booking-confirmed-page__ticket-id">
-                  {ticketId ?? event?.id?.toUpperCase() ?? "MM-PENDING"}
-                </code>
+                <code className="booking-confirmed-page__ticket-id">{ticketCode}</code>
 
                 <div className="booking-confirmed-page__qr-wrap">
                   <div className="booking-confirmed-page__qr-glow" />
                   <img
                     className="booking-confirmed-page__qr"
-                    alt="Stylized minimalist QR code with magenta accents"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDs0ilYWriScYHhXqhtMv09xNBBJc4BT_DGFAlRPhOaPDFoKOMUr2dwVSua_yJJIOf7itAcdiuxmaSm0ViW6V_I9fFhnPirN7n_qlfAGvCRn41mUZIeLCvk7hRwAgQn67gM4Otq7rD6QJ6e4ps19tqotRn0s5TkOrh3F6-DBZ-gQLDRDPjZVPY112X_qkrH62SzjiQ9aNCJJ98len9JT28JdE8B9hH3muZsPZmlNUkH-GDDPXx1fdHhX2cNPlJ_XM0wp_65SyHTKjs"
+                    alt="Booking QR code"
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&bgcolor=27201f&color=fface9&data=${encodeURIComponent(
+                      ticketCode
+                    )}`}
                   />
                 </div>
               </div>
@@ -139,11 +152,7 @@ export default function BookingConfirmedPage() {
             <div className="booking-confirmed-page__ticket-footer">
               <div className="booking-confirmed-page__ticket-footer-item">
                 <span className="material-symbols-outlined">mail</span>
-                <p>
-                  {member?.name
-                    ? `Check your email, ${member.name}, for your digital mask and secret password.`
-                    : "Check your email for your digital mask and secret password."}
-                </p>
+                <p>Check your email for your digital mask and secret password.</p>
               </div>
               <div className="booking-confirmed-page__ticket-footer-item">
                 <span className="material-symbols-outlined">lock</span>
@@ -163,7 +172,7 @@ export default function BookingConfirmedPage() {
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
             <Link
-              to="/profile"
+              to="/bookings"
               className="booking-confirmed-page__action-btn booking-confirmed-page__action-btn--secondary"
             >
               View My Bookings

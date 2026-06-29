@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment files (use .env.example as the template)
+.env
+
+# Local-only docs (not tracked)
+README.md
+MatchMate_API_Documentation.pdf
