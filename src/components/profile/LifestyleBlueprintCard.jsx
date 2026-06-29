@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const intentOptions = ["Slow Burn", "Meaningful Connection", "Curiosity"];
 
-export default function LifestyleBlueprintCard({ data, onChange, onRemoveTrait, onAddTrait, onSave }) {
+export default function LifestyleBlueprintCard({ data, onChange, onRemoveTrait, onAddTrait, onSave, saving }) {
   const [newTrait, setNewTrait] = useState("");
   const [showInput, setShowInput] = useState(false);
 
@@ -113,9 +113,10 @@ export default function LifestyleBlueprintCard({ data, onChange, onRemoveTrait, 
         <p className="text-on-surface-variant font-label-sm text-xs italic">All changes are encrypted and private.</p>
         <button
           onClick={onSave}
-          className="w-full md:w-auto px-12 py-4 bg-primary text-on-primary font-bold rounded-xl hover:shadow-[0_0_15px_rgba(248,55,224,0.4)] active:scale-95 transition-all"
+          disabled={saving}
+          className="w-full md:w-auto px-12 py-4 bg-primary text-on-primary font-bold rounded-xl hover:shadow-[0_0_15px_rgba(248,55,224,0.4)] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Save My Veil
+          {saving ? "Saving..." : "Save My Veil"}
         </button>
       </div>
     </div>

@@ -1,14 +1,68 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppNavbar from "../components/layout/AppNavbar";
 import BottomNav from "../components/layout/BottomNav";
 import FilterChip from "../components/UI/FilterChip";
 import EventCard from "../components/event/EventCard";
-import {events} from "../data/Event"; // Assuming you have a data file for events
+import { getEvents, getEventsByType, searchEvents } from "../api/events";
+import { extractErrorMessage } from "../api/client";
+import { mapEventToCard } from "../utils/eventMapper";
 
-const filters = ["All Events", "Masquerade", "Blind Dinner", "Secret Soiree"];
+// Map UI filter labels to backend EventType values (All = no filter).
+const filters = [
+  { label: "All Events", type: null },
+  { label: "Speed Dating", type: "SPEED_DATING" },
+  { label: "Group Dating", type: "GROUP_DATING" },
+  { label: "Dinner Night", type: "DINNER_NIGHT" },
+  { label: "Adventure Date", type: "ADVENTURE_DATE" },
+];
 
 export default function EventsPage() {
   const [activeFilter, setActiveFilter] = useState("All Events");
+  const [searchInput, setSearchInput] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        let page;
+        if (keyword.trim()) {
+          page = await searchEvents(keyword.trim());
+        } else {
+          const filter = filters.find((f) => f.label === activeFilter);
+          page = filter?.type
+            ? await getEventsByType(filter.type)
+            : await getEvents();
+        }
+        if (!cancelled) {
+          setEvents(page?.content ?? []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(extractErrorMessage(err, "Unable to load events right now."));
+          setEvents([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeFilter, keyword]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setKeyword(searchInput);
+  };
 
   return (
     <div className="bg-background text-on-background font-body-md selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden antialiased min-h-screen">
@@ -31,27 +85,49 @@ export default function EventsPage() {
           <div className="max-w-container-max mx-auto flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-3 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
               {filters.map((filter) => (
-                <FilterChip key={filter} label={filter} active={activeFilter === filter} onClick={() => setActiveFilter(filter)} />
+                <FilterChip
+                  key={filter.label}
+                  label={filter.label}
+                  active={activeFilter === filter.label && !keyword}
+                  onClick={() => {
+                    setKeyword("");
+                    setSearchInput("");
+                    setActiveFilter(filter.label);
+                  }}
+                />
               ))}
             </div>
 
-            <div className="relative w-full md:w-64">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">calendar_today</span>
-              <select className="w-full bg-surface-container-low border border-white/5 rounded-full pl-10 pr-10 py-2 text-on-surface-variant focus:ring-1 focus:ring-primary/50 font-body-md text-sm appearance-none cursor-pointer">
-                <option>This Weekend</option>
-                <option>Next 7 Days</option>
-                <option>Monthly View</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
-            </div>
+            <form onSubmit={handleSearchSubmit} className="relative w-full md:w-72">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search encounters..."
+                className="w-full bg-surface-container-low border border-white/5 rounded-full pl-10 pr-4 py-2 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-1 focus:ring-primary/50 font-body-md text-sm"
+              />
+            </form>
           </div>
         </section>
 
         <section className="px-margin-mobile md:px-margin-desktop py-12">
-          <div className="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-            {events.map((event) => (
-              <EventCard key={event.title} {...event} />
-            ))}
+          <div className="max-w-container-max mx-auto">
+            {loading ? (
+              <p className="text-center text-on-surface-variant py-20 font-body-md">Loading encounters...</p>
+            ) : error ? (
+              <p className="text-center text-red-300 py-20 font-body-md">{error}</p>
+            ) : events.length === 0 ? (
+              <p className="text-center text-on-surface-variant py-20 font-body-md">
+                No encounters found{keyword ? ` for "${keyword}"` : ""}.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+                {events.map((event) => (
+                  <EventCard key={event.eventId} {...mapEventToCard(event)} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -75,8 +151,6 @@ export default function EventsPage() {
           </div>
         </section>
       </main>
-
-      {/* Reuse your existing Footer component here — e.g. <Footer /> */}
 
       <BottomNav active="Events" />
     </div>

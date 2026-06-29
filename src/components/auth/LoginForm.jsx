@@ -1,19 +1,42 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import FormField from "../UI/FormField";
+import { useAuth } from "../../context/AuthContext";
+import { extractErrorMessage } from "../../api/client";
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from?.pathname || "/events";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: wire up to your auth API
-    console.log("Login attempt:", formData);
+    setError("");
+
+    if (!formData.email || !formData.password) {
+      setError("Please enter both your email and password.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await login(formData);
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
+      setError(extractErrorMessage(err, "Invalid email or password."));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -30,10 +53,10 @@ export default function LoginForm() {
       <form className="space-y-8" onSubmit={handleSubmit}>
         <div className="space-y-6">
           <FormField
-            label="Username"
+            label="Email"
             name="email"
             type="email"
-            placeholder="Enter your username"
+            placeholder="email@luxury.com"
             value={formData.email}
             onChange={handleChange}
           />
@@ -51,12 +74,19 @@ export default function LoginForm() {
           />
         </div>
 
+        {error && (
+          <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 font-body-md text-sm text-red-300">
+            {error}
+          </p>
+        )}
+
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full bg-primary-container text-on-primary-container h-14 rounded-full font-label-sm text-label-sm uppercase tracking-widest font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300 shadow-[0_0_20px_rgba(248,55,224,0.3)]"
+            disabled={submitting}
+            className="w-full bg-primary-container text-on-primary-container h-14 rounded-full font-label-sm text-label-sm uppercase tracking-widest font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300 shadow-[0_0_20px_rgba(248,55,224,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Continue Journey
+            {submitting ? "Entering..." : "Continue Journey"}
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
               arrow_forward
             </span>

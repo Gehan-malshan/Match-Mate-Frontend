@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Footer from "../components/layout/Footer";
 import Navbar from "../components/layout/Navbar";
+import { useAuth } from "../context/AuthContext";
+import { checkEmailExists } from "../api/auth";
+import { extractErrorMessage } from "../api/client";
 
 const genderOptions = ["Man", "Woman", "Non-binary"];
 const ageOptions = ["18-25", "26-35", "36-45", "46+"];
@@ -12,6 +16,13 @@ const yesNoQuestions = [
   "Do you prefer having your weekends planned out ahead of time rather than leaving things completely open to spontaneous ideas?",
   "When you attend social gatherings, do you find large groups energizing rather than draining?",
   "In relationships, do you tend to speak your mind immediately rather than processing your thoughts quietly first?",
+];
+
+// The User.gender column is a free-text string; we send canonical enum-style values.
+const genderValues = [
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
+  { value: "OTHER", label: "Other" },
 ];
 
 function ChoiceButton({ children, selected, onClick, className = "" }) {
@@ -30,15 +41,36 @@ function ChoiceButton({ children, selected, onClick, className = "" }) {
   );
 }
 
-function TextField({ label, type = "text", placeholder }) {
+function TextField({ label, type = "text", placeholder, name, value, onChange, options }) {
   return (
     <label className="flex flex-col gap-3">
       <span className="font-label-sm text-label-sm uppercase text-primary/90">{label}</span>
-      <input
-        type={type}
-        placeholder={placeholder}
-        className="h-14 rounded border border-outline-variant bg-surface-container-low px-5 font-body-md text-body-md text-on-background outline-none transition-colors placeholder:text-on-surface-variant focus:border-primary"
-      />
+      {options ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="h-14 rounded border border-outline-variant bg-surface-container-low px-5 font-body-md text-body-md text-on-background outline-none transition-colors focus:border-primary"
+        >
+          <option value="" disabled>
+            Select...
+          </option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="h-14 rounded border border-outline-variant bg-surface-container-low px-5 font-body-md text-body-md text-on-background outline-none transition-colors placeholder:text-on-surface-variant focus:border-primary"
+        />
+      )}
     </label>
   );
 }
@@ -81,9 +113,90 @@ function StepTabs({ step, setStep }) {
 export default function RegistrationPage() {
   const [step, setStep] = useState("identity");
   const [answers, setAnswers] = useState({});
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    phoneNumber: "",
+    age: "",
+    gender: "",
+    city: "",
+    country: "",
+  });
+  const [error, setError] = useState("");
+  const [emailNotice, setEmailNotice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const selectAnswer = (key, value) => {
     setAnswers((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleFieldChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const requiredIdentityFilled =
+    form.firstName &&
+    form.lastName &&
+    form.email &&
+    form.password &&
+    form.age &&
+    form.gender;
+
+  const handleEmailBlur = async () => {
+    setEmailNotice("");
+    if (!form.email || !form.email.includes("@")) return;
+    try {
+      const exists = await checkEmailExists(form.email);
+      if (exists) {
+        setEmailNotice("This email is already registered. Try logging in instead.");
+      }
+    } catch {
+      // Availability check is best-effort; ignore network errors here.
+    }
+  };
+
+  const goToQuestions = () => {
+    setError("");
+    if (!requiredIdentityFilled) {
+      setError("Please complete first name, last name, email, password, age, and gender.");
+      return;
+    }
+    setStep("questions");
+  };
+
+  const handleSubmit = async () => {
+    setError("");
+    if (!requiredIdentityFilled) {
+      setError("Please complete the required identity fields in Step 1.");
+      setStep("identity");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await register({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+        phoneNumber: form.phoneNumber || null,
+        age: Number(form.age),
+        gender: form.gender,
+        city: form.city || null,
+        country: form.country || null,
+      });
+      navigate("/events", { replace: true });
+    } catch (err) {
+      setError(extractErrorMessage(err, "Registration failed. Please try again."));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -116,18 +229,44 @@ export default function RegistrationPage() {
                 </div>
 
                 <div className="grid gap-6">
-                  <TextField label="First Name" placeholder="Your name" />
-                  <TextField label="Last Name" placeholder="Your surname" />
-                  <TextField label="Username" placeholder="Choose a username" />
-                  <TextField label="Email Address" type="email" placeholder="email@luxury.com" />
-                  <TextField label="Password" type="password" placeholder="••••••••" />
+                  <TextField label="First Name" name="firstName" placeholder="Your name" value={form.firstName} onChange={handleFieldChange} />
+                  <TextField label="Last Name" name="lastName" placeholder="Your surname" value={form.lastName} onChange={handleFieldChange} />
+                  <label className="flex flex-col gap-3">
+                    <span className="font-label-sm text-label-sm uppercase text-primary/90">Email Address</span>
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleFieldChange}
+                      onBlur={handleEmailBlur}
+                      placeholder="email@luxury.com"
+                      className="h-14 rounded border border-outline-variant bg-surface-container-low px-5 font-body-md text-body-md text-on-background outline-none transition-colors placeholder:text-on-surface-variant focus:border-primary"
+                    />
+                    {emailNotice && <span className="font-body-md text-sm text-yellow-300">{emailNotice}</span>}
+                  </label>
+                  <TextField label="Password" name="password" type="password" placeholder="••••••••" value={form.password} onChange={handleFieldChange} />
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <TextField label="Age" name="age" type="number" placeholder="25" value={form.age} onChange={handleFieldChange} />
+                    <TextField label="Gender" name="gender" value={form.gender} onChange={handleFieldChange} options={genderValues} />
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <TextField label="Phone Number" name="phoneNumber" placeholder="+94 ..." value={form.phoneNumber} onChange={handleFieldChange} />
+                    <TextField label="City" name="city" placeholder="Colombo" value={form.city} onChange={handleFieldChange} />
+                  </div>
+                  <TextField label="Country" name="country" placeholder="Sri Lanka" value={form.country} onChange={handleFieldChange} />
                 </div>
               </div>
+
+              {error && (
+                <p className="mt-8 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 font-body-md text-sm text-red-300">
+                  {error}
+                </p>
+              )}
 
               <div className="mt-14 flex justify-end border-t border-white/10 pt-10">
                 <button
                   type="button"
-                  onClick={() => setStep("questions")}
+                  onClick={goToQuestions}
                   className="inline-flex min-h-14 items-center gap-5 rounded-full bg-primary-container px-10 font-label-sm text-label-sm uppercase text-on-primary-container shadow-[0_0_24px_rgba(248,55,224,0.35)] transition-all hover:opacity-90"
                 >
                   Continue Journey
@@ -173,7 +312,8 @@ export default function RegistrationPage() {
                     <span className="mb-3 block font-label-sm text-label-sm uppercase text-on-surface-variant">Primary Language</span>
                     <select
                       className="h-14 w-full rounded border border-outline-variant bg-surface-container-low px-4 font-body-md text-body-md text-on-background outline-none focus:border-primary"
-                      defaultValue=""
+                      value={answers.language || ""}
+                      onChange={(e) => selectAnswer("language", e.target.value)}
                     >
                       <option value="" disabled>Select Language...</option>
                       <option>English</option>
@@ -240,6 +380,12 @@ export default function RegistrationPage() {
                 </div>
               </section>
 
+              {error && (
+                <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 font-body-md text-sm text-red-300">
+                  {error}
+                </p>
+              )}
+
               <div className="flex flex-col-reverse items-center justify-between gap-5 pt-4 md:flex-row">
                 <button
                   type="button"
@@ -250,9 +396,11 @@ export default function RegistrationPage() {
                 </button>
                 <button
                   type="button"
-                  className="inline-flex min-h-14 items-center gap-5 rounded-full bg-primary-container px-10 font-label-sm text-label-sm uppercase text-on-primary-container shadow-[0_0_24px_rgba(248,55,224,0.35)] transition-all hover:opacity-90"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="inline-flex min-h-14 items-center gap-5 rounded-full bg-primary-container px-10 font-label-sm text-label-sm uppercase text-on-primary-container shadow-[0_0_24px_rgba(248,55,224,0.35)] transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Complete Registration
+                  {submitting ? "Creating..." : "Complete Registration"}
                   <span className="material-symbols-outlined text-xl">arrow_forward</span>
                 </button>
               </div>

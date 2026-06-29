@@ -1,4 +1,5 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const navItems = [
   { label: "Events", path: "/events" },
@@ -7,6 +8,14 @@ const navItems = [
 ];
 
 export default function AppNavbar() {
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <nav className="fixed left-0 top-0 z-50 w-full border-b border-white/5 bg-surface/90 shadow-sm backdrop-blur-md">
       <div className="mx-auto flex max-w-container-max items-center justify-between px-margin-mobile py-4 md:px-margin-desktop">
@@ -35,15 +44,35 @@ export default function AppNavbar() {
           ))}
         </div>
 
-        <Link
-          to="/profile"
-          aria-label="Open profile"
-          className="grid size-11 place-items-center rounded-full border border-primary/40 bg-surface-container-low text-primary shadow-[0_0_18px_rgba(255,172,233,0.14)] transition-all hover:border-primary hover:bg-primary/10 active:scale-95"
-        >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-            account_circle
-          </span>
-        </Link>
+        <div className="flex items-center gap-3">
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="hidden md:inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant transition-all hover:border-primary hover:text-primary"
+            >
+              <span className="material-symbols-outlined text-base">logout</span>
+              Logout
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden md:inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant transition-all hover:border-primary hover:text-primary"
+            >
+              <span className="material-symbols-outlined text-base">login</span>
+              Login
+            </Link>
+          )}
+
+          <Link
+            to={isAuthenticated ? "/profile" : "/login"}
+            aria-label="Open profile"
+            className="grid size-11 place-items-center rounded-full border border-primary/40 bg-surface-container-low text-primary shadow-[0_0_18px_rgba(255,172,233,0.14)] transition-all hover:border-primary hover:bg-primary/10 active:scale-95"
+          >
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+              account_circle
+            </span>
+          </Link>
+        </div>
       </div>
     </nav>
   );
