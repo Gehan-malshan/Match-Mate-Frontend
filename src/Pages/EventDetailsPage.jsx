@@ -4,12 +4,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { getEventById } from "../data/Event";
 
-
 const EventDetailPage = () => {
-  const { id } = useParams();
+  // 1. Changed 'id' to 'eventId' to perfectly match the App.jsx route token
+  const { eventId } = useParams();
   const navigate = useNavigate();
   const heroBgRef = useRef(null);
-  const event = getEventById(id);
+
+  // 2. Fetch data using the correct parameter token.
+  // Note: If your static IDs in data/Event.js are numbers, use: getEventById(Number(eventId))
+  const event = getEventById(eventId);
 
   // Parallax scroll effect on hero image
   useEffect(() => {
@@ -26,7 +29,7 @@ const EventDetailPage = () => {
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
+  }, [eventId]);
 
   if (!event) {
     return (
@@ -144,7 +147,7 @@ const EventDetailPage = () => {
                 — About the Encounter
               </span>
               <div className="space-y-4 text-on-surface-variant font-body-lg text-body-lg leading-relaxed">
-                {event.description.map((para, i) => (
+                {event.description?.map((para, i) => (
                   <p key={i}>{para}</p>
                 ))}
               </div>
@@ -152,7 +155,7 @@ const EventDetailPage = () => {
 
             {/* Features */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {event.features.map((feature, i) => (
+              {event.features?.map((feature, i) => (
                 <div
                   key={i}
                   className="glass-panel p-8 rounded-2xl relative overflow-hidden group hover:border-primary/30 transition-all"
@@ -207,7 +210,6 @@ const EventDetailPage = () => {
 
           {/* ── Right Column: Sticky Booking Card ── */}
           <aside className="lg:col-span-4 lg:sticky lg:top-24 h-fit">
-            {/* Main Booking Card */}
             <div className="glass-panel p-8 rounded-2xl space-y-8 relative overflow-hidden border border-primary/20 shadow-2xl">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -mr-16 -mt-16" />
 
@@ -267,8 +269,9 @@ const EventDetailPage = () => {
               <div className="space-y-4 pt-4">
                 <button
                   disabled={event.statusType === "closed"}
+                  onClick={() => navigate(`/events/${eventId}/payment-processing`)}
                   className="w-full bg-primary-container text-on-primary-container py-4 rounded-full font-bold font-label-sm text-label-sm uppercase tracking-wider flex justify-center items-center gap-3 hover:opacity-90 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(248,55,224,0.3)] disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+                >              
                   {event.statusType === "waitlist"
                     ? "Join the Waitlist"
                     : event.statusType === "closed"
@@ -279,8 +282,7 @@ const EventDetailPage = () => {
                   </span>
                 </button>
                 <p className="text-center text-[10px] text-on-surface-variant px-4 uppercase tracking-tighter">
-                  By booking, you agree to our anonymity protocol and dress code
-                  requirements.
+                  By booking, you agree to our anonymity protocol and dress code requirements.
                 </p>
               </div>
 
@@ -313,7 +315,7 @@ const EventDetailPage = () => {
                 Preparation
               </h4>
               <ul className="space-y-3">
-                {event.preparation.map((item, i) => (
+                {event.preparation?.map((item, i) => (
                   <li
                     key={i}
                     className="flex gap-3 font-label-sm text-label-sm text-on-surface-variant"
