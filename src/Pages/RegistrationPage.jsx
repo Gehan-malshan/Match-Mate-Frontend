@@ -25,6 +25,35 @@ const genderValues = [
   { value: "OTHER", label: "Other" },
 ];
 
+// Map the questionnaire's "Looking For" choice onto the backend seekingGender enum.
+const seekingGenderMap = { Man: "MALE", Woman: "FEMALE", "Non-binary": "ANY" };
+
+// Map the questionnaire's preferred age band onto [min, max] preferences.
+const ageRangeMap = {
+  "18-25": [18, 25],
+  "26-35": [26, 35],
+  "36-45": [36, 45],
+  "46+": [46, 120],
+};
+
+// Derive matchmaking signals (interests + partner prefs) from the questionnaire.
+const buildMatchSignals = (answers) => {
+  const [minAgePref = null, maxAgePref = null] = ageRangeMap[answers.age] || [];
+  const interests = [
+    answers.activity,
+    answers.drinking,
+    answers.career,
+    answers.language,
+  ].filter(Boolean);
+
+  return {
+    interests,
+    seekingGender: seekingGenderMap[answers.gender] || null,
+    minAgePref,
+    maxAgePref,
+  };
+};
+
 function ChoiceButton({ children, selected, onClick, className = "" }) {
   return (
     <button
@@ -190,6 +219,7 @@ export default function RegistrationPage() {
         gender: form.gender,
         city: form.city || null,
         country: form.country || null,
+        ...buildMatchSignals(answers),
       });
       navigate("/events", { replace: true });
     } catch (err) {

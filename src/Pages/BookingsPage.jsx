@@ -1,6 +1,8 @@
 // src/Pages/BookingsPage.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppNavbar from "../components/layout/AppNavbar";
+import BottomNav from "../components/layout/BottomNav";
 import { getMyBookings, cancelBooking } from "../api/bookings";
 import { extractErrorMessage } from "../api/client";
 
@@ -69,6 +71,7 @@ export default function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-background text-on-background pt-24 pb-16 px-5 md:px-16">
+      <AppNavbar />
       <div className="max-w-[900px] mx-auto">
         <header className="mb-10">
           <span className="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-2 block">
@@ -178,6 +181,7 @@ export default function BookingsPage() {
           </ul>
         )}
       </div>
+      <BottomNav active="Bookings" />
     </div>
   );
 }
