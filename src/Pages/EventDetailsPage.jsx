@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { getEventById } from "../api/events";
 import { extractErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { getMockEventById } from "../data/Events";
 import {
   FALLBACK_IMAGE,
   deriveStatus,
@@ -52,7 +53,14 @@ const EventDetailPage = () => {
         const data = await getEventById(id);
         if (!cancelled) setEvent(data);
       } catch (err) {
-        if (!cancelled) setError(extractErrorMessage(err, "Event not found"));
+        if (!cancelled) {
+          const mockEvent = getMockEventById(id);
+          if (mockEvent) {
+            setEvent(mockEvent);
+          } else {
+            setError(extractErrorMessage(err, "Event not found"));
+          }
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -102,7 +110,7 @@ const EventDetailPage = () => {
   }
 
   const status = deriveStatus(event);
-  const heroImage = event.imageUrl || FALLBACK_IMAGE;
+  const heroImage = event.imageUrl || event.coverImageUrl || FALLBACK_IMAGE;
   const descriptionParas = (event.description || "")
     .split(/\n+/)
     .filter((p) => p.trim().length > 0);

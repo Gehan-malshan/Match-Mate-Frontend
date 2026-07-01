@@ -49,7 +49,7 @@ export default function BookingConfirmedPage() {
   }, []);
 
   const eventName = event?.eventName ?? "Your Event";
-  const heroImage = event?.imageUrl || FALLBACK_IMAGE;
+  const heroImage = event?.imageUrl || event?.coverImageUrl || FALLBACK_IMAGE;
   const ticketCode = bookingId ? `MM-${bookingId}` : "MM-PENDING";
 
   const handleAddToCalendar = () => {

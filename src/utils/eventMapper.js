@@ -50,7 +50,7 @@ export const mapEventToCard = (event) => {
   const status = deriveStatus(event);
   return {
     id: event.eventId,
-    image: event.imageUrl || FALLBACK_IMAGE,
+    image: event.imageUrl || event.coverImageUrl || FALLBACK_IMAGE,
     title: event.eventName,
     location: event.location,
     date: formatEventDate(event.eventDate),

@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 
-export default function MemberCard({ id, name, image, tags, variant = "primary" }) {
+export default function MemberCard({ id, name, image, avatar, tags, variant = "primary" }) {
+  const memberImage = image || avatar;
+
   return (
     <div className="glass-card rounded-2xl p-6 flex flex-col items-center group">
       <div className="relative w-40 h-40 mb-6 rounded-full overflow-hidden border-2 border-primary/20 p-1 bg-surface-container">
-        <img src={image} alt={name} className="w-full h-full object-cover rounded-full" />
+        <img src={memberImage} alt={name} className="w-full h-full object-cover rounded-full" />
       </div>
       <h3 className="font-headline-md text-headline-md text-on-surface mb-2">{name}</h3>
       <div className="flex gap-2 mb-8">

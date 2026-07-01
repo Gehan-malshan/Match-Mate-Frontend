@@ -6,6 +6,7 @@ import EventCard from "../components/event/EventCard";
 import { getEvents, getEventsByType, searchEvents } from "../api/events";
 import { extractErrorMessage } from "../api/client";
 import { mapEventToCard } from "../utils/eventMapper";
+import { getMockEvents } from "../data/Events";
 
 // Map UI filter labels to backend EventType values (All = no filter).
 const filters = [
@@ -64,6 +65,28 @@ export default function EventsPage() {
     setKeyword(searchInput);
   };
 
+  const visibleEvents = (() => {
+    if (!error) return events;
+
+    const source = getMockEvents();
+    const filteredByType =
+      activeFilter === "All Events"
+        ? source
+        : source.filter((event) => {
+            const filter = filters.find((item) => item.label === activeFilter);
+            return filter?.type ? event.eventType === filter.type : true;
+          });
+
+    if (!keyword.trim()) return filteredByType;
+
+    const query = keyword.trim().toLowerCase();
+    return filteredByType.filter((event) => {
+      return [event.eventName, event.location, event.description, event.eventType]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    });
+  })();
+
   return (
     <div className="bg-background text-on-background font-body-md selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden antialiased min-h-screen">
       <AppNavbar />
@@ -115,15 +138,13 @@ export default function EventsPage() {
           <div className="max-w-container-max mx-auto">
             {loading ? (
               <p className="text-center text-on-surface-variant py-20 font-body-md">Loading encounters...</p>
-            ) : error ? (
-              <p className="text-center text-red-300 py-20 font-body-md">{error}</p>
-            ) : events.length === 0 ? (
+            ) : visibleEvents.length === 0 ? (
               <p className="text-center text-on-surface-variant py-20 font-body-md">
                 No encounters found{keyword ? ` for "${keyword}"` : ""}.
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-                {events.map((event) => (
+                {visibleEvents.map((event) => (
                   <EventCard key={event.eventId} {...mapEventToCard(event)} />
                 ))}
               </div>
